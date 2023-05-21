@@ -58,7 +58,127 @@ Model specifics (**30 points**):
 * You can engineer more features, but this may add complexity when building the app in 2nd phase.
 * Once the model is finalized you need to figure out how to save it to later load it in your app. For tidymodels look at `write_rds()` and `read_rds()` (though IRL there are much more impressive tools out there), for sklearn look at [`pickle` or `joblib`](https://scikit-learn.org/stable/model_persistence.html)).
 
+
+```{r}
+library(readr)
+#data <- read_csv("C:/Users/user/OneDrive - mail.tau.ac.il/Desktop/R/data science apps/HW5-EyalGrinberg/data/bank_marketing.csv")
+# setting data path for external usage
+curr_working_dir_path <- getwd()
+data_path <- paste0(curr_working_dir_path, "/data/bank_marketing.csv")
+data <- read_csv(data_path) 
+```
+
+```{r}
+anyNA(data)
+#data <- replace_na(data, "unkown")
+#there's no NA values.
+```
+
+```{r}
+library(tidymodels)
+library(pROC)
+library(xgboost)
+```
+
+
+```{r}
+set.seed(123)
+split <- initial_split(data, prop = 0.8)
+
+# Extract the training and test sets
+training <- training(split)
+testing <- testing(split)
+```
+
+```{r}
+bank_recipe <- recipe(y ~ ., data = training) %>%
+  step_novel(all_nominal_predictors()) 
+
+
+# RF model
+
+# Create a workflow
+workflow_RF <- workflow() %>%
+  add_model(rand_forest(mode = "classification")) %>%
+  add_recipe(bank_recipe)
+
+# Train the workflow
+trained_workflow_RF <- workflow_RF %>% fit(training)
+
+# Evaluate the workflow on the test set
+predictions_RF <- predict(trained_workflow_RF, testing, type = "prob")
+
+auc_RF <- auc(testing$y, predictions_RF$.pred_yes)
+
+print(auc_RF)
+
+
+# boost_tree
+
+bank_recipe1 <- recipe(y ~ ., data = training) %>%
+  step_dummy(all_nominal_predictors()) #%>%
+
+# Create a new workflow
+workflow_boost <- workflow() %>%
+  add_model(boost_tree(mode = "classification")) %>%
+  add_recipe(bank_recipe1)
+
+# Train the new workflow
+trained_workflow_boost <- workflow_boost %>%
+  fit(training)
+
+# Evaluate the new workflow on the test set
+predictions_boost <- predict(trained_workflow_boost, testing, type = "prob")
+
+auc_boost <- auc(testing$y, predictions_boost$.pred_yes)
+
+print(auc_boost)
+
+# Compare the AUCs
+ifelse(auc_RF > auc_boost, "Random forest has a higher AUC", "Gradient boosting has a higher AUC")
+```
+
+```{r}
+# save the model in a rds file
+
+# write_rds(trained_workflow_boost, "C:/Users/user/OneDrive - mail.tau.ac.il/Desktop/R/data science apps/HW5-EyalGrinberg/boost_tree_model.rds")
+```
+
+
+```{r}
+# extracting important values about the features (for app usage)
+
+# # Get the column types
+# column_types <- sapply(data, class)
+# 
+# # Get the unique values for each column
+# unique_values <- lapply(data, unique)
+# 
+# # Print the column types and unique values
+# for (i in 1:length(data)) {
+#   column_name <- names(data)[i]
+#   cat("Column:", column_name, "\n")
+#   cat("Type:", column_types[i], "\n")
+#   cat("Unique Values:", "\n")
+#   
+#   if (column_types[i] == "numeric") {
+#     cat("Minimum:", min(data[[i]]), "\n")
+#     cat("Maximum:", max(data[[i]]), "\n")
+#   } else {
+#     print(unique_values[[i]])
+#   }
+#   
+#   cat("\n")
+# }
+```
+
 App specifics (**60 points**):
+
+```{r}
+# the app is in a different file 
+
+```
+
 
 * This is the mockup, very simple, you can change it if you like as long as you do not change the basic functionality below:
 ![](images/zoltar_mockup.png)
@@ -83,7 +203,16 @@ Read Traag et. al. [Leiden](https://arxiv.org/abs/1810.08473) 2020 paper first 5
 In your own up to 100 words, what are the *two* main modifications of the Louvain method implemented in the Leiden method, and how do they improve Louvain's results?
 
 ```{r}
-### YOUR ANSWER HERE ###
+# 1. Local moving phase implementation.
+# 
+# Both algorithms operate the same in terms of the first visit to all the nodes in a network.
+# But after the first visit, Leiden visits only nodes whose neighborhood has changed, whereas Louvain keeps visiting all nodes in the network. 
+# Thus, Leiden implements this phase more efficiently.
+# 
+# 2. Leiden uses a refined partition and the aggregate network is created based on the refined partition.
+#
+# This idea enables communities in the original (non-refined) partition to be splitted to sub-communities in the refined partition.
+# by creating the aggregate network based on this partition the algorithm can detect better partitions.
 ```
 
 
