@@ -1,2 +1,2 @@
 job,marital,education,default,housing,loan,contact,month,day_of_week,poutcome,age,campaign,previous,cons.price.idx,cons.conf.idx,euribor3m
-admin.,married,university.degree,no,yes,no,cellular,may,thu,nonexistent,38,2,0,93.75,-41.8,4.86
+admin.,married,university.degree,no,yes,no,cellular,may,thu,nonexistent,38,2,0,93.75,-41.8,1.28
